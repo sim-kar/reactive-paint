@@ -1,4 +1,4 @@
-package se.miun.dt176g.xxxxyyyy.reactive;
+package se.miun.dt176g.sika2001.reactive;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
