@@ -23,6 +23,6 @@ public class Rectangle extends Shape {
 	@Override
 	public void draw(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
-		g2.drawRect(this.topLeft().x(), this.bottomRight().y(), this.width(), this.height());
+		g2.drawRect(this.topLeft().x(), this.topLeft().y(), this.width(), this.height());
 	}
 }
