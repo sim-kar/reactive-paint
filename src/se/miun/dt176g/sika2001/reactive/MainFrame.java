@@ -10,7 +10,9 @@ import javax.swing.*;
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame {
 
-	private final DrawingPanel drawingPanel;
+	/* COMPONENTS */
+
+	private static final DrawingPanel DRAWING_PANEL = new DrawingPanel();;
 	private final JPanel toolPanel;
 	private Color color;
 	private Tool tool;
@@ -28,9 +30,8 @@ public class MainFrame extends JFrame {
 		this.color = Color.BLACK;
 		this.tool = Tool.FREEHAND;
 
-		drawingPanel = new DrawingPanel();
-		drawingPanel.setBounds(0, 0, getWidth(), getHeight());
-		this.getContentPane().add(drawingPanel, BorderLayout.CENTER);
+		DRAWING_PANEL.setBounds(0, 0, getWidth(), getHeight());
+		this.getContentPane().add(DRAWING_PANEL, BorderLayout.CENTER);
 
 		toolPanel = new JPanel();
 		toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
