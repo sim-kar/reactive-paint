@@ -42,6 +42,13 @@ public class MainFrame extends JFrame {
 		JButton rectangleButton = new JButton("Rectangle");
 		JButton ovalButton = new JButton("Oval");
 		JButton colorButton = new JButton("Color");
+		colorButton.addActionListener((e) ->
+			this.color = JColorChooser.showDialog(
+					toolPanel,
+					"Choose Color",
+					this.color
+			)
+		);
 		JButton clearButton = new JButton("Clear");
 		JSlider thicknessSlider = new JSlider();
 		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
@@ -64,6 +71,4 @@ public class MainFrame extends JFrame {
 
 		this.setJMenuBar(new Menu(this));
 	}
-
-
 }
