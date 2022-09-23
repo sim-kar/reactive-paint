@@ -15,8 +15,8 @@ public class Line extends Shape {
      * @param start starting {@link Point} of the line.
      * @param end ending {@link Point} of the line.
      */
-    public Line(Point start, Point end, Color color) {
-        super(start, end, color);
+    public Line(Point start, Point end, int thickness, Color color) {
+        super(start, end, thickness, color);
     }
 
     @Override

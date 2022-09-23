@@ -118,11 +118,11 @@ public class MainFrame extends JFrame {
 					switch (tool) {
 						case FREEHAND -> { return; }
 						case LINE -> DRAWING_PANEL.getDrawing()
-								.addShape(new Line(press, release, color));
+								.addShape(new Line(press, release, thickness, color));
 						case OVAL -> DRAWING_PANEL.getDrawing()
-								.addShape(new Oval(press, release, color));
+								.addShape(new Oval(press, release, thickness, color));
 						case RECTANGLE -> DRAWING_PANEL.getDrawing()
-								.addShape(new Rectangle(press, release, color));
+								.addShape(new Rectangle(press, release, thickness, color));
 					}
 
 					DRAWING_PANEL.redraw();

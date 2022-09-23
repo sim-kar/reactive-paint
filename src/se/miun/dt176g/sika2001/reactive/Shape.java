@@ -1,6 +1,7 @@
 package se.miun.dt176g.sika2001.reactive;
 
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -15,16 +16,19 @@ public abstract class Shape implements Drawable {
 
     private final Point start;
     private final Point end;
+    private final int thickness;
     private final Color color;
 
-    public Shape(Point start, Point end, Color color) {
+    public Shape(Point start, Point end, int thickness, Color color) {
         this.start = start;
         this.end = end;
+        this.thickness = thickness;
         this.color = color;
     }
 
     public Point start() { return start; }
     public Point end() { return end; }
+    public int thickness() { return thickness; }
     public Color color() { return color; }
 
     public int width() { return Math.abs(start.x() - end.x()); }
@@ -37,6 +41,7 @@ public abstract class Shape implements Drawable {
     @Override
     public void draw(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
+        g2.setStroke(new BasicStroke(thickness()));
         g2.setColor(color());
         drawShape(g);
     }

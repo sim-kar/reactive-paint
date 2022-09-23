@@ -17,8 +17,8 @@ public class Oval extends Shape {
      * @param start position of the first corner of the bounding box.
      * @param end position of the second corner of the bounding box (opposite the first).
      */
-    public Oval(Point start, Point end, Color color) {
-        super(start, end, color);
+    public Oval(Point start, Point end, int thickness, Color color) {
+        super(start, end, thickness, color);
     }
 
     @Override

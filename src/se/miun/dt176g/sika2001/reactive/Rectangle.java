@@ -16,8 +16,8 @@ public class Rectangle extends Shape {
 	 * @param start position of the first corner.
 	 * @param end position of the second corner (opposite the first).
 	 */
-	public Rectangle(Point start, Point end, Color color) {
-		super(start, end, color);
+	public Rectangle(Point start, Point end, int thickness, Color color) {
+		super(start, end, thickness, color);
 	}
 
 	@Override
