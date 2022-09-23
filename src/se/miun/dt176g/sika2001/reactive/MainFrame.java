@@ -6,12 +6,7 @@ import javax.swing.*;
 /**
  * <h1>MainFrame</h1> 
  * JFrame to contain the rest
- *
- * @author 	--YOUR NAME HERE--
- * @version 1.0
- * @since 	2022-09-08
  */
-
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame {
 
@@ -41,7 +36,9 @@ public class MainFrame extends JFrame {
 		JButton lineButton = new JButton("Line");
 		JButton rectangleButton = new JButton("Rectangle");
 		JButton ovalButton = new JButton("Oval");
+		JButton clearButton = new JButton("Clear");
 		JButton colorButton = new JButton("Color");
+
 		colorButton.addActionListener((e) ->
 			this.color = JColorChooser.showDialog(
 					toolPanel,
@@ -49,10 +46,14 @@ public class MainFrame extends JFrame {
 					this.color
 			)
 		);
-		JButton clearButton = new JButton("Clear");
+
 		JSlider thicknessSlider = new JSlider();
 		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
-		thicknessSlider.setAlignmentX(SwingConstants.CENTER);
+
+		// center the thickness slider horizontally
+		JPanel thicknessSliderPanel = new JPanel();
+		thicknessSliderPanel.setLayout(new FlowLayout());
+		thicknessSliderPanel.add(thicknessSlider);
 
 		toolPanel.add(freehandButton);
 		toolPanel.add(lineButton);
@@ -60,11 +61,6 @@ public class MainFrame extends JFrame {
 		toolPanel.add(ovalButton);
 		toolPanel.add(colorButton);
 		toolPanel.add(clearButton);
-
-		// center the thickness slider horizontally
-		JPanel thicknessSliderPanel = new JPanel();
-		thicknessSliderPanel.setLayout(new FlowLayout());
-		thicknessSliderPanel.add(thicknessSlider);
 		toolPanel.add(thicknessSliderPanel);
 
 		this.getContentPane().add(toolPanel, BorderLayout.WEST);
