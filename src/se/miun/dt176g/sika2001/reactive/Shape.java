@@ -11,37 +11,24 @@ import java.awt.Color;
  */
 public abstract class Shape implements Drawable {
 
-	// private member : some container storing coordinates
-    private final Point topLeft;
-    private final Point bottomRight;
-    private final int width;
-    private final int height;
+    private final Point start;
+    private final Point end;
     private final Color color;
 
     public Shape(Point start, Point end, Color color) {
-        // make sure start is always the top leftmost point, and end is the bottom rightmost point,
-        // in case the shape is drawn from bottom to top, or right to left.
-        if (end.x() < start.x()) {
-            int x = start.x();
-            start = new Point(end.x(), start.y());
-            end = new Point(x, end.y()) ;
-        }
-        if (end.y() < start.y()) {
-            int y = start.y();
-            start = new Point(start.x(), end.y());
-            end = new Point(end.x(), y);
-        }
-
-        this.topLeft = start;
-        this.bottomRight = end;
-        this.width = Math.abs(topLeft.x() - bottomRight.x());
-        this.height = Math.abs(topLeft.y() - bottomRight.y());
+        this.start = start;
+        this.end = end;
         this.color = color;
     }
 
-    public Point topLeft() { return this.topLeft; }
-    public Point bottomRight() { return this.bottomRight; }
-    public int width() { return this.width; }
-    public int height() { return this.height; }
-    public Color color() { return this.color; }
+    public Point start() { return start; }
+    public Point end() { return end; }
+    public Color color() { return color; }
+
+    public int width() { return Math.abs(start.x() - end.x()); }
+    public int height() { return Math.abs(start.y() - end.y()); }
+    public int left() { return Math.min(start.x(), end.x()); }
+    public int right() { return Math.max(start.x(), end.x()); }
+    public int top() { return Math.min(start.y(), end.y()); }
+    public int bottom() { return Math.max(start.y(), end.y()); }
 }
