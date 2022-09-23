@@ -15,29 +15,54 @@ import javax.swing.*;
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame {
 
-	private String header;
-	private DrawingPanel drawingPanel;
+	private final DrawingPanel drawingPanel;
+	private final JPanel toolPanel;
+	private Color color;
 
 	public MainFrame() {
-
-		// default window-size.
 		this.setSize(1200, 900);
-		// application closes when the "x" in the upper-right corner is clicked.
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-		this.header = "Reactive Paint";
+		String header = "Reactive Paint";
 		this.setTitle(header);
 
-		// Changes layout from default to BorderLayout
 		this.setLayout(new BorderLayout());
 
-		// Creates all necessary objects and adds them to the MainFrame (just one object right now)
+		this.color = Color.BLACK;
+
 		drawingPanel = new DrawingPanel();
 		drawingPanel.setBounds(0, 0, getWidth(), getHeight());
 		this.getContentPane().add(drawingPanel, BorderLayout.CENTER);
 
-		this.setJMenuBar(new Menu(this));
+		toolPanel = new JPanel();
+		toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
 
+		JButton freehandButton = new JButton("Freehand");
+		JButton lineButton = new JButton("Line");
+		JButton rectangleButton = new JButton("Rectangle");
+		JButton ovalButton = new JButton("Oval");
+		JButton colorButton = new JButton("Color");
+		JButton clearButton = new JButton("Clear");
+		JSlider thicknessSlider = new JSlider();
+		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
+		thicknessSlider.setAlignmentX(SwingConstants.CENTER);
+
+		toolPanel.add(freehandButton);
+		toolPanel.add(lineButton);
+		toolPanel.add(rectangleButton);
+		toolPanel.add(ovalButton);
+		toolPanel.add(colorButton);
+		toolPanel.add(clearButton);
+
+		// center the thickness slider horizontally
+		JPanel thicknessSliderPanel = new JPanel();
+		thicknessSliderPanel.setLayout(new FlowLayout());
+		thicknessSliderPanel.add(thicknessSlider);
+		toolPanel.add(thicknessSliderPanel);
+
+		this.getContentPane().add(toolPanel, BorderLayout.WEST);
+
+		this.setJMenuBar(new Menu(this));
 	}
 
 
