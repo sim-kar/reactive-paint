@@ -13,6 +13,7 @@ public class MainFrame extends JFrame {
 	private final DrawingPanel drawingPanel;
 	private final JPanel toolPanel;
 	private Color color;
+	private Tool tool;
 
 	public MainFrame() {
 		this.setSize(1200, 900);
@@ -23,7 +24,9 @@ public class MainFrame extends JFrame {
 
 		this.setLayout(new BorderLayout());
 
+		// set default values
 		this.color = Color.BLACK;
+		this.tool = Tool.FREEHAND;
 
 		drawingPanel = new DrawingPanel();
 		drawingPanel.setBounds(0, 0, getWidth(), getHeight());
@@ -33,12 +36,15 @@ public class MainFrame extends JFrame {
 		toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
 
 		JButton freehandButton = new JButton("Freehand");
+		freehandButton.addActionListener(e -> this.tool = Tool.FREEHAND);
 		JButton lineButton = new JButton("Line");
+		lineButton.addActionListener(e -> this.tool = Tool.LINE);
 		JButton rectangleButton = new JButton("Rectangle");
+		rectangleButton.addActionListener(e -> this.tool = Tool.RECTANGLE);
 		JButton ovalButton = new JButton("Oval");
+		ovalButton.addActionListener(e -> this.tool = Tool.OVAL);
 		JButton clearButton = new JButton("Clear");
 		JButton colorButton = new JButton("Color");
-
 		colorButton.addActionListener((e) ->
 			this.color = JColorChooser.showDialog(
 					toolPanel,
@@ -46,7 +52,6 @@ public class MainFrame extends JFrame {
 					this.color
 			)
 		);
-
 		JSlider thicknessSlider = new JSlider();
 		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
 
