@@ -25,6 +25,6 @@ public class Rectangle extends Shape {
 	public void draw(Graphics g) {
 		Graphics2D g2 = (Graphics2D) g;
 		g2.setColor(color());
-		g2.drawRect(topLeft().x(), topLeft().y(), width(), height());
+		g2.drawRect(left(), top(), width(), height());
 	}
 }

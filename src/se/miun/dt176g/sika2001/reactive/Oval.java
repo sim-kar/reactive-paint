@@ -26,6 +26,6 @@ public class Oval extends Shape {
     public void draw(Graphics g) {
         Graphics2D g2 = (Graphics2D) g;
         g2.setColor(color());
-        g2.drawOval(topLeft().x(), topLeft().y(), width(), height());
+        g2.drawOval(left(), top(), width(), height());
     }
 }
