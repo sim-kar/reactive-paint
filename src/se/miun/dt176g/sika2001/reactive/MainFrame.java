@@ -1,6 +1,10 @@
 package se.miun.dt176g.sika2001.reactive;
 
+import io.reactivex.rxjava3.core.Observable;
+import io.reactivex.rxjava3.disposables.Disposable;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.swing.*;
 
 /**
@@ -72,5 +76,44 @@ public class MainFrame extends JFrame {
 		this.getContentPane().add(toolPanel, BorderLayout.WEST);
 
 		this.setJMenuBar(new Menu(this));
+	}
+
+	/* BEHAVIOR */
+
+	Disposable shapes = getMousePressedAndReleased().subscribe();
+
+	/**
+	 * Get an Observable that adds {@link Shape}s to the drawing panel when the mouse is pressed
+	 * and released. A {@link Point} is recorded when the mouse is pressed, and another is recorded
+	 * when the mouse is released. The two points are used to draw shapes with a width and a height,
+	 * such as rectangles.
+	 *
+	 * @return an Observable that emits when the mouse is pressed and released.
+	 */
+	private Observable<MouseEvent> getMousePressedAndReleased() {
+		return Observable.create(emitter ->
+			DRAWING_PANEL.addMouseListener(new MouseAdapter() {
+				Point press;
+				Point release;
+
+				@Override
+				public void mousePressed(MouseEvent e) {
+					press = new Point(e.getX(), e.getY());
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent e) {
+					release = new Point(e.getX(), e.getY());
+
+					switch (tool) {
+						case FREEHAND, LINE, OVAL -> { return; }
+						case RECTANGLE -> DRAWING_PANEL.getDrawing()
+								.addShape(new Rectangle(press, release));
+					}
+
+					DRAWING_PANEL.redraw();
+				}
+			})
+		);
 	}
 }
