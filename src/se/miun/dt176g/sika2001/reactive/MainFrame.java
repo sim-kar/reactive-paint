@@ -51,11 +51,11 @@ public class MainFrame extends JFrame {
 		JButton clearButton = new JButton("Clear");
 		JButton colorButton = new JButton("Color");
 		colorButton.addActionListener((e) ->
-			this.color = JColorChooser.showDialog(
-					toolPanel,
-					"Choose Color",
-					this.color
-			)
+				this.color = JColorChooser.showDialog(
+						toolPanel,
+						"Choose Color",
+						this.color
+				)
 		);
 		JSlider thicknessSlider = new JSlider();
 		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
@@ -108,7 +108,7 @@ public class MainFrame extends JFrame {
 					switch (tool) {
 						case FREEHAND, LINE, OVAL -> { return; }
 						case RECTANGLE -> DRAWING_PANEL.getDrawing()
-								.addShape(new Rectangle(press, release));
+								.addShape(new Rectangle(press, release, color));
 					}
 
 					DRAWING_PANEL.redraw();
