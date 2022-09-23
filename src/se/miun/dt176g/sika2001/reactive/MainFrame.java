@@ -16,9 +16,14 @@ public class MainFrame extends JFrame {
 
 	/* COMPONENTS */
 
-	private static final DrawingPanel DRAWING_PANEL = new DrawingPanel();;
+	private static final DrawingPanel DRAWING_PANEL = new DrawingPanel();
+	private static final int MIN_THICKNESS = 1;
+	private static final int MAX_THICKNESS = 50;
+	private static final int DEFAULT_THICKNESS = 3;
+	private static final int THICKNESS_TICK_SPACING = 1;
 	private final JPanel toolPanel;
 	private Color color;
+	private int thickness;
 	private Tool tool;
 
 	public MainFrame() {
@@ -32,6 +37,7 @@ public class MainFrame extends JFrame {
 
 		// set default values
 		this.color = Color.BLACK;
+		this.thickness = DEFAULT_THICKNESS;
 		this.tool = Tool.FREEHAND;
 
 		DRAWING_PANEL.setBounds(0, 0, getWidth(), getHeight());
@@ -57,8 +63,12 @@ public class MainFrame extends JFrame {
 						this.color
 				)
 		);
-		JSlider thicknessSlider = new JSlider();
+		JSlider thicknessSlider = new JSlider(MIN_THICKNESS, MAX_THICKNESS, DEFAULT_THICKNESS);
 		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
+		thicknessSlider.setMajorTickSpacing(THICKNESS_TICK_SPACING);
+		thicknessSlider.setSnapToTicks(true);
+		thicknessSlider.setPaintTicks(true);
+		thicknessSlider.addChangeListener(e -> thickness = thicknessSlider.getValue());
 
 		// center the thickness slider horizontally
 		JPanel thicknessSliderPanel = new JPanel();
