@@ -31,8 +31,8 @@ public abstract class Shape implements Drawable {
 
         this.topLeft = start;
         this.bottomRight = end;
-        this.width = topLeft.x() - bottomRight.x();
-        this.height = topLeft.y() - bottomRight.y();
+        this.width = Math.abs(topLeft.x() - bottomRight.x());
+        this.height = Math.abs(topLeft.y() - bottomRight.y());
     }
 
     public Point topLeft() { return this.topLeft; }
