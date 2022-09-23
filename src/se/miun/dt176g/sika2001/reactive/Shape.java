@@ -2,12 +2,14 @@ package se.miun.dt176g.sika2001.reactive;
 
 
 import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 
 /**
  * <h1>Shape</h1> Abstract class which derived classes builds on.
  * <p>
  * This class consists of the attributes common to all geometric shapes.
- * Specific shapes are based on this class.
+ * Specific shapes are based on this class. Derived classes must implement {@link Shape#drawShape}.
  */
 public abstract class Shape implements Drawable {
 
@@ -31,4 +33,19 @@ public abstract class Shape implements Drawable {
     public int right() { return Math.max(start.x(), end.x()); }
     public int top() { return Math.min(start.y(), end.y()); }
     public int bottom() { return Math.max(start.y(), end.y()); }
+
+    @Override
+    public void draw(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setColor(color());
+        drawShape(g);
+    }
+
+    /**
+     * Used by concrete child classes to draw their {@link Shape}.
+     * Uses the parent's graphics object to draw with the set color and thickness.
+     *
+     * @param g the graphics object that will draw the shape.
+     */
+    abstract void drawShape(Graphics g);
 }

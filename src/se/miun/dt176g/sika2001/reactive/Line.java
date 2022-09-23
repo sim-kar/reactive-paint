@@ -2,7 +2,6 @@ package se.miun.dt176g.sika2001.reactive;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 
 /**
  * <h1>Oval</h1>
@@ -21,9 +20,7 @@ public class Line extends Shape {
     }
 
     @Override
-    public void draw(Graphics g) {
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setColor(color());
-        g2.drawLine(start().x(), start().y(), end().x(), end().y());
+    void drawShape(Graphics g) {
+        g.drawLine(start().x(), start().y(), end().x(), end().y());
     }
 }
