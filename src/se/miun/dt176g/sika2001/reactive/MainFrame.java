@@ -5,6 +5,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Arrays;
 import javax.swing.*;
 
 /**
@@ -13,8 +14,6 @@ import javax.swing.*;
  */
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame {
-
-	/* COMPONENTS */
 
 	private static final DrawingPanel DRAWING_PANEL = new DrawingPanel();
 	private static final int MIN_THICKNESS = 1;
@@ -27,6 +26,8 @@ public class MainFrame extends JFrame {
 	private Tool tool;
 
 	public MainFrame() {
+		/* COMPONENTS */
+
 		this.setSize(1200, 900);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -43,77 +44,118 @@ public class MainFrame extends JFrame {
 		DRAWING_PANEL.setBounds(0, 0, getWidth(), getHeight());
 		this.getContentPane().add(DRAWING_PANEL, BorderLayout.CENTER);
 
-		toolPanel = new JPanel();
-		toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.Y_AXIS));
+		this.toolPanel = new JPanel();
+		this.toolPanel.setLayout(new BoxLayout(this.toolPanel, BoxLayout.Y_AXIS));
 
 		JButton freehandButton = new JButton("Freehand");
-		freehandButton.addActionListener(e -> this.tool = Tool.FREEHAND);
 		JButton lineButton = new JButton("Line");
-		lineButton.addActionListener(e -> this.tool = Tool.LINE);
 		JButton rectangleButton = new JButton("Rectangle");
-		rectangleButton.addActionListener(e -> this.tool = Tool.RECTANGLE);
 		JButton ovalButton = new JButton("Oval");
-		ovalButton.addActionListener(e -> this.tool = Tool.OVAL);
 		JButton clearButton = new JButton("Clear");
 		JButton colorButton = new JButton("Color");
-		colorButton.addActionListener((e) ->
-				this.color = JColorChooser.showDialog(
-						toolPanel,
-						"Choose Color",
-						this.color
-				)
-		);
+
 		JSlider thicknessSlider = new JSlider(MIN_THICKNESS, MAX_THICKNESS, DEFAULT_THICKNESS);
 		thicknessSlider.setOrientation(SwingConstants.VERTICAL);
 		thicknessSlider.setMajorTickSpacing(THICKNESS_TICK_SPACING);
 		thicknessSlider.setSnapToTicks(true);
 		thicknessSlider.setPaintTicks(true);
-		thicknessSlider.addChangeListener(e -> thickness = thicknessSlider.getValue());
 
 		// center the thickness slider horizontally
 		JPanel thicknessSliderPanel = new JPanel();
 		thicknessSliderPanel.setLayout(new FlowLayout());
 		thicknessSliderPanel.add(thicknessSlider);
 
-		toolPanel.add(freehandButton);
-		toolPanel.add(lineButton);
-		toolPanel.add(rectangleButton);
-		toolPanel.add(ovalButton);
-		toolPanel.add(colorButton);
-		toolPanel.add(clearButton);
-		toolPanel.add(thicknessSliderPanel);
+		this.toolPanel.add(freehandButton);
+		this.toolPanel.add(lineButton);
+		this.toolPanel.add(rectangleButton);
+		this.toolPanel.add(ovalButton);
+		this.toolPanel.add(colorButton);
+		this.toolPanel.add(clearButton);
+		this.toolPanel.add(thicknessSliderPanel);
 
-		this.getContentPane().add(toolPanel, BorderLayout.WEST);
+		this.getContentPane().add(this.toolPanel, BorderLayout.WEST);
 
 		this.setJMenuBar(new Menu(this));
+
+		/* BEHAVIOR */
+
+		Disposable selectFreehandTool = getButtonClick(freehandButton)
+				.subscribe(e -> this.tool = Tool.FREEHAND);
+		Disposable selectLineTool = getButtonClick(lineButton)
+				.subscribe(e -> this.tool = Tool.LINE);
+		Disposable selectRectangleTool = getButtonClick(rectangleButton)
+				.subscribe(e -> this.tool = Tool.RECTANGLE);
+		Disposable selectOvalTool = getButtonClick(ovalButton)
+				.subscribe(e -> this.tool = Tool.OVAL);
+
+		Disposable showColorDialog = getButtonClick(colorButton).subscribe(e ->
+				this.color = JColorChooser.showDialog(toolPanel,"Choose Color", this.color)
+		);
+
+		Disposable clear = getButtonClick(clearButton).subscribe(e -> {
+			// TODO
+			}
+		);
+
+		Disposable setThickness = getSliderValue(thicknessSlider)
+				.subscribe(i -> this.thickness = i);
+
+		// Get the events of the mouse being pressed and released, and use the coordinates from
+		// the events to create new shapes. The currently selected tool determines what kind of
+		// shape is created.
+		Disposable drawShapes = Observable.zip(
+				getMousePressedEvent(),
+				getMouseReleasedEvent(),
+				Arrays::asList
+		).subscribe(l -> {
+			Point press = new Point(l.get(0).getX(), l.get(0).getY());
+			Point release = new Point(l.get(1).getX(), l.get(1).getY());
+
+			switch (tool) {
+				case FREEHAND -> { return; }
+				case LINE -> DRAWING_PANEL.getDrawing()
+						.addShape(new Line(press, release, thickness, color));
+				case OVAL -> DRAWING_PANEL.getDrawing()
+						.addShape(new Oval(press, release, thickness, color));
+				case RECTANGLE -> DRAWING_PANEL.getDrawing()
+						.addShape(new Rectangle(press, release, thickness, color));
+			}
+
+			DRAWING_PANEL.redraw();
+		});
 	}
 
-	/* BEHAVIOR */
-
-	Disposable shapes = getMousePressedAndReleased().subscribe();
+	/**
+	 * Get and Observable that emits a MouseEvent every time the mouse is pressed.
+	 *
+	 * @return the Observable.
+	 */
+	private Observable<MouseEvent> getMousePressedEvent() {
+		return Observable.create(emitter ->
+				DRAWING_PANEL.addMouseListener(new MouseAdapter() {
+					@Override
+					public void mousePressed(MouseEvent event) {
+						emitter.onNext(event);
+					}
+				})
+		);
+	}
 
 	/**
-	 * Get an Observable that adds {@link Shape}s to the drawing panel when the mouse is pressed
-	 * and released. A {@link Point} is recorded when the mouse is pressed, and another is recorded
-	 * when the mouse is released. The two points are used to draw shapes with a width and a height,
-	 * such as rectangles.
+	 * Get and Observable that emits a MouseEvent every time the mouse is released.
 	 *
-	 * @return an Observable that emits when the mouse is pressed and released.
+	 * @return the Observable.
 	 */
-	private Observable<MouseEvent> getMousePressedAndReleased() {
+	private Observable<MouseEvent> getMouseReleasedEvent() {
 		return Observable.create(emitter ->
-			DRAWING_PANEL.addMouseListener(new MouseAdapter() {
-				Point press;
-				Point release;
-
-				@Override
-				public void mousePressed(MouseEvent e) {
-					press = new Point(e.getX(), e.getY());
-				}
-
-				@Override
-				public void mouseReleased(MouseEvent e) {
-					release = new Point(e.getX(), e.getY());
+				DRAWING_PANEL.addMouseListener(new MouseAdapter() {
+					@Override
+					public void mouseReleased(MouseEvent event) {
+						emitter.onNext(event);
+					}
+				})
+		);
+	}
 
 	/**
 	 * Get an Observable that emits the value of the provided slider whenever it is changed.
