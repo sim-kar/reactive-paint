@@ -115,15 +115,18 @@ public class MainFrame extends JFrame {
 				public void mouseReleased(MouseEvent e) {
 					release = new Point(e.getX(), e.getY());
 
-					switch (tool) {
-						case FREEHAND -> { return; }
-						case LINE -> DRAWING_PANEL.getDrawing()
-								.addShape(new Line(press, release, thickness, color));
-						case OVAL -> DRAWING_PANEL.getDrawing()
-								.addShape(new Oval(press, release, thickness, color));
-						case RECTANGLE -> DRAWING_PANEL.getDrawing()
-								.addShape(new Rectangle(press, release, thickness, color));
-					}
+	/**
+	 * Get an Observable that emits the value of the provided slider whenever it is changed.
+	 *
+	 * @param slider the slider to monitor.
+	 * @return the Observable.
+	 */
+	private Observable<Integer> getSliderValue(JSlider slider) {
+		return Observable.create(emitter ->
+				slider.addChangeListener(event ->
+						emitter.onNext(slider.getValue()))
+		);
+	}
 
 	/**
 	 * Get an Observable that emits true whenever the provided button is clicked.
