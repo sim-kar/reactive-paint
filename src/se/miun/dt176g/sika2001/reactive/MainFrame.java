@@ -125,9 +125,15 @@ public class MainFrame extends JFrame {
 								.addShape(new Rectangle(press, release, thickness, color));
 					}
 
-					DRAWING_PANEL.redraw();
-				}
-			})
+	/**
+	 * Get an Observable that emits true whenever the provided button is clicked.
+	 *
+	 * @param button the button to monitor.
+	 * @return the Observable.
+	 */
+	private Observable<Boolean> getButtonClick(JButton button) {
+		return Observable.create(emitter ->
+			button.addActionListener(event -> emitter.onNext(true))
 		);
 	}
 }
