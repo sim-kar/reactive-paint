@@ -124,6 +124,36 @@ public class MainFrame extends JFrame {
 
 			DRAWING_PANEL.redraw();
 		});
+
+		// Get the events of the mouse being dragged until the button is released, and use
+		// the coordinates from the events to create a new freehand line.
+		// Since takeUntil() fires onComplete(), we need to create a new Observable for
+		// every new freehand line, which is done whenever the mouse is pressed
+		Disposable drawFreehand = getMousePressedEvent().subscribe(e -> {
+			if (this.tool != Tool.FREEHAND) return;
+
+			// add the mouse press event as well
+			Observable.just(e).concatWith(getMouseDraggedEvent())
+					.takeUntil(getMouseReleasedEvent())
+					.toList()
+					.subscribe(l -> {
+						Point start = new Point(
+								l.get(0).getX(),
+								l.get(0).getY()
+						);
+						Point end = new Point(
+								l.get(l.size() - 1).getX(),
+								l.get(l.size() - 1).getY()
+						);
+
+						FreehandLine line = new FreehandLine(start, end, thickness, color);
+
+						l.forEach(event -> line.addPoint(new Point(event.getX(), event.getY())));
+
+						DRAWING_PANEL.getDrawing().addShape(line);
+						DRAWING_PANEL.redraw();
+					});
+		});
 	}
 
 	/**
