@@ -5,6 +5,7 @@ import io.reactivex.rxjava3.disposables.Disposable;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.Arrays;
 import javax.swing.*;
 
@@ -151,6 +152,22 @@ public class MainFrame extends JFrame {
 				DRAWING_PANEL.addMouseListener(new MouseAdapter() {
 					@Override
 					public void mouseReleased(MouseEvent event) {
+						emitter.onNext(event);
+					}
+				})
+		);
+	}
+
+	/**
+	 * Get and Observable that emits a MouseEvent when the mouse is dragged.
+	 *
+	 * @return the Observable.
+	 */
+	private Observable<MouseEvent> getMouseDraggedEvent() {
+		return Observable.create(emitter ->
+				DRAWING_PANEL.addMouseMotionListener(new MouseMotionAdapter() {
+					@Override
+					public void mouseDragged(MouseEvent event) {
 						emitter.onNext(event);
 					}
 				})
