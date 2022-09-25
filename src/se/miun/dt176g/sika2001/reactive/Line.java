@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 
 /**
- * <h1>Oval</h1>
+ * <h1>Line</h1>
  * A straight line between the given start and end {@link Point}s.
  */
 public class Line extends Shape {
