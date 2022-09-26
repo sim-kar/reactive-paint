@@ -94,9 +94,9 @@ public class MainFrame extends JFrame {
 		);
 
 		Disposable clear = getButtonClick(clearButton).subscribe(e -> {
-			// TODO
-			}
-		);
+			DRAWING_PANEL.getDrawing().clear();
+			DRAWING_PANEL.redraw();
+		});
 
 		Disposable setThickness = getSliderValue(thicknessSlider)
 				.subscribe(i -> this.thickness = i);
