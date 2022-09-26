@@ -26,6 +26,13 @@ public class Drawing implements Drawable {
 		this.shapes.add(s);
 	}
 
+	/**
+	 * Remove all {@link Shape}s from this drawing.
+	 */
+	public void clear() {
+		this.shapes.clear();
+	}
+
 	@Override
 	public void draw(Graphics g) {
 		shapes.forEach(s -> s.draw(g));
