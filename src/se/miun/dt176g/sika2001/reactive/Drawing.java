@@ -13,6 +13,9 @@ import java.util.List;
 public class Drawing implements Drawable {
 	private final List<Shape> shapes;
 
+	/**
+	 * Construct a new drawing.
+	 */
 	public Drawing() {
 		this.shapes = new ArrayList<>();
 	}
@@ -20,7 +23,7 @@ public class Drawing implements Drawable {
 	/**
 	 * Add a shape to the drawing.
 	 * 
-	 * @param s a {@link Shape} object.
+	 * @param s the {@link Shape} to add
 	 */
 	public void addShape(Shape s) {
 		this.shapes.add(s);
