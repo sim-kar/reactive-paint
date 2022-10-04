@@ -19,6 +19,15 @@ public abstract class Shape implements Drawable {
     private final int thickness;
     private final Color color;
 
+    /**
+     * Constructs a new Shape with the given start point and end point. The given thickness and
+     * color determines the shape's outline.
+     *
+     * @param start the Shape's start point
+     * @param end the Shape's end point
+     * @param thickness the Shape's thickness
+     * @param color the Shape's color
+     */
     public Shape(Point start, Point end, int thickness, Color color) {
         this.start = start;
         this.end = end;
