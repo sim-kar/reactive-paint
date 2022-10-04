@@ -8,16 +8,17 @@ import javax.swing.JOptionPane;
 
 /**
  * <h1>Menu</h1> 
- *
- * @author 	--YOUR NAME HERE--
- * @version 1.0
- * @since 	2022-09-08
+ * A menu that can be used to trigger events in the supplied {@link MainFrame}.
  */
 public class Menu extends JMenuBar {
 
 	private static final long serialVersionUID = 1L;
 
-	
+	/**
+	 * Construct a new Menu that can trigger events in the given {@link MainFrame}.
+	 *
+	 * @param frame the MainFrame that this menu is connected to.
+	 */
 	public Menu(MainFrame frame) {
 		init(frame);
 	}
