@@ -27,6 +27,9 @@ public class MainFrame extends JFrame {
 	private int thickness;
 	private Tool tool;
 
+	/**
+	 * Constructs a new MainFrame.
+	 */
 	public MainFrame() {
 		/* COMPONENTS */
 
