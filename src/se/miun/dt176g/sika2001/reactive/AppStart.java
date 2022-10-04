@@ -5,10 +5,7 @@ import javax.swing.SwingUtilities;
 
 /**
 * <h1>AppStart</h1>
-*
-* @author  --YOUR NAME HERE--
-* @version 1.0
-* @since   2022-09-08
+* Creates a {@link MainFrame} on the event dispatching thread.
 */
 public class AppStart {
 
