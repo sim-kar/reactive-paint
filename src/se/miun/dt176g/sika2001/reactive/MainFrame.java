@@ -11,7 +11,8 @@ import javax.swing.*;
 
 /**
  * <h1>MainFrame</h1> 
- * JFrame to contain the rest
+ * Contains a drawing panel for drawing different shapes, a tool panel for selecting tools and
+ * parameters such as color, and a menu bar.
  */
 @SuppressWarnings("serial")
 public class MainFrame extends JFrame {
@@ -41,6 +42,7 @@ public class MainFrame extends JFrame {
 		this.color = Color.BLACK;
 		this.thickness = DEFAULT_THICKNESS;
 		this.tool = Tool.FREEHAND;
+		DRAWING_PANEL.setBackground(Color.WHITE);
 
 		DRAWING_PANEL.setBounds(0, 0, getWidth(), getHeight());
 		this.getContentPane().add(DRAWING_PANEL, BorderLayout.CENTER);
