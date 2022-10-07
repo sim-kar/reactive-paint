@@ -5,6 +5,8 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.io.Serial;
+import java.io.Serializable;
 
 /**
  * <h1>Shape</h1> Abstract class which derived classes builds on.
@@ -12,8 +14,10 @@ import java.awt.Graphics2D;
  * This class consists of the attributes common to all geometric shapes.
  * Specific shapes are based on this class. Derived classes must implement {@link Shape#drawShape}.
  */
-public abstract class Shape implements Drawable {
+public abstract class Shape implements Drawable, Serializable {
 
+    @Serial
+    private static final long serialVersionUID = -3425413804631497685L;
     private final Point start;
     private final Point end;
     private final int thickness;
