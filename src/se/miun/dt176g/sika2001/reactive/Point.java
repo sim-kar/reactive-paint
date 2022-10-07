@@ -1,11 +1,16 @@
 package se.miun.dt176g.sika2001.reactive;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * <h1>Point</h1> 
  * A point on a 2D plane with an x- and a y-coordinate.
  */
-public class Point {
+public class Point implements Serializable {
 
+	@Serial
+	private static final long serialVersionUID = -1167382948560506726L;
 	private int x, y;
 
 	/**
