@@ -6,7 +6,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
-import java.util.Arrays;
 import javax.swing.*;
 
 /**
@@ -106,53 +105,29 @@ public class MainFrame extends JFrame {
 		Disposable setThickness = getSliderValue(thicknessSlider)
 				.subscribe(i -> this.thickness = i);
 
-		// Get the events of the mouse being pressed and released, and use the coordinates from
-		// the events to create new shapes. The currently selected tool determines what kind of
-		// shape is created.
-		Disposable drawShapes = Observable.zip(
-				getMousePressedEvent(),
-				getMouseReleasedEvent(),
-				Arrays::asList
-		).subscribe(l -> {
-			Point press = new Point(l.get(0).getX(), l.get(0).getY());
-			Point release = new Point(l.get(1).getX(), l.get(1).getY());
-
-			switch (tool) {
-				case FREEHAND -> { return; }
-				case LINE -> DRAWING_PANEL.getDrawing()
-						.addShape(new Line(press, release, thickness, color));
-				case OVAL -> DRAWING_PANEL.getDrawing()
-						.addShape(new Oval(press, release, thickness, color));
-				case RECTANGLE -> DRAWING_PANEL.getDrawing()
-						.addShape(new Rectangle(press, release, thickness, color));
-			}
-
-			DRAWING_PANEL.redraw();
-		});
-
 		// Get the events of the mouse being pressed and dragged until the button is released,
-		// and use the coordinates from the events to create a new freehand line.
-		Disposable drawFreehand = getMousePressedEvent().mergeWith(getMouseDraggedEvent())
+		// and use the coordinates from the events to create a new shapes depending on selected
+		// tool.
+		Disposable drawShapes = getMousePressedEvent().mergeWith(getMouseDraggedEvent())
+				.map(e -> new Point(e.getX(), e.getY()))
 				.buffer(getMouseReleasedEvent())
-				.subscribe(l -> {
-					if (this.tool != Tool.FREEHAND) return;
+				.map(l -> {
+					Point start = l.get(0);
+					Point end = l.get(l.size() - 1);
 
-					Point start = new Point(
-							l.get(0).getX(),
-							l.get(0).getY()
-					);
-					Point end = new Point(
-							l.get(l.size() - 1).getX(),
-							l.get(l.size() - 1).getY()
-					);
+					if (tool == Tool.LINE) return new Line(start, end, thickness, color);
+					if (tool == Tool.OVAL ) return new Oval(start, end, thickness, color);
+					if (tool == Tool.RECTANGLE) return new Rectangle(start, end, thickness, color);
 
-					FreehandLine line = new FreehandLine(start, end, thickness, color);
-
-					l.forEach(event -> line.addPoint(new Point(event.getX(), event.getY())));
-
-					DRAWING_PANEL.getDrawing().addShape(line);
+					FreehandLine freehandLine = new FreehandLine(start, end, thickness, color);
+					l.forEach(freehandLine::addPoint);
+					return freehandLine;
+				})
+				.subscribe(s -> {
+					DRAWING_PANEL.getDrawing().addShape(s);
 					DRAWING_PANEL.redraw();
 				});
+
 	}
 
 	/**
