@@ -7,24 +7,21 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * A server that listens for client {@link Socket}s on the same port. Start the server with
- * {@link Server#start()}, and stop it by disposing of the Observable returned by
- * {@link Server#start()}.
+ * A server that listens for client {@link Socket}s on the same port. Will assign an available port
+ * automatically. Start the server with {@link Server#start()}, and stop it by disposing of the
+ * Observable returned by {@link Server#start()}.
  */
 public class Server {
 
-    private final int port;
     private final ServerSocket serverSocket;
 
     /**
-     * Create a new Server using the given port number.
+     * Create a new Server with an automatically assigned port number.
      *
-     * @param port the port number to use
      * @throws IOException if an I/O error occurs when opening the socket
      */
-    public Server(int port) throws IOException {
-        this.port = port;
-        this.serverSocket = new ServerSocket(port);
+    public Server() throws IOException {
+        this.serverSocket = new ServerSocket(0);
     }
 
     /**
@@ -47,6 +44,6 @@ public class Server {
      * @return the port number
      */
     public int getPort() {
-        return port;
+        return serverSocket.getLocalPort();
     }
 }
