@@ -1,7 +1,6 @@
 package se.miun.dt176g.sika2001.reactive;
 
 import io.reactivex.rxjava3.core.Observable;
-import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -35,7 +34,7 @@ public class Server {
             while (!emitter.isDisposed()) { // keep server active until disposed
                 emitter.onNext(serverSocket.accept());
             }
-        }).subscribeOn(Schedulers.io());
+        });
     }
 
     /**
