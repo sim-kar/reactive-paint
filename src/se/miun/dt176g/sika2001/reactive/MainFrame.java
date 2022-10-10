@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
+import java.io.IOException;
 import javax.swing.*;
 
 /**
@@ -25,6 +26,7 @@ public class MainFrame extends JFrame {
 	private Color color;
 	private int thickness;
 	private Tool tool;
+	private Server server;
 
 	/**
 	 * Constructs a new MainFrame.
@@ -128,6 +130,16 @@ public class MainFrame extends JFrame {
 					DRAWING_PANEL.redraw();
 				});
 
+	}
+
+	/**
+	 * Start hosting a server that others can connect to using the same port number.
+	 *
+	 * @throws IOException if an I/O error occurs when opening the server socket
+	 */
+	public void host() throws IOException {
+		server = new Server();
+		server.start().subscribe();
 	}
 
 	/**
