@@ -3,11 +3,13 @@ package se.miun.dt176g.sika2001.reactive;
 import io.reactivex.rxjava3.annotations.Nullable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import javax.swing.*;
 
 /**
@@ -140,7 +142,14 @@ public class MainFrame extends JFrame {
 	 */
 	public void host() throws IOException {
 		server = new Server();
-		server.start().subscribe();
+		Disposable drawClientShapes = server.start()
+				.subscribeOn(Schedulers.io())
+				.map(s -> new ObjectInputStream(s.getInputStream()))
+				.map(s -> (Shape) s.readObject())
+				.subscribe(s -> EventQueue.invokeLater(() -> {
+					DRAWING_PANEL.getDrawing().addShape(s);
+					DRAWING_PANEL.redraw();
+				}));
 	}
 
 	/**
