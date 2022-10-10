@@ -1,5 +1,6 @@
 package se.miun.dt176g.sika2001.reactive;
 
+import io.reactivex.rxjava3.annotations.Nullable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import java.awt.*;
@@ -140,6 +141,15 @@ public class MainFrame extends JFrame {
 	public void host() throws IOException {
 		server = new Server();
 		server.start().subscribe();
+	}
+
+	/**
+	 * Get the server if this MainFrame is hosting. Will return null otherwise.
+	 *
+	 * @return the server, or null if not hosting
+	 */
+	public @Nullable Server getServer() {
+		return server;
 	}
 
 	/**
