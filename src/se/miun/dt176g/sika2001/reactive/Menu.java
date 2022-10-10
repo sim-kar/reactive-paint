@@ -4,6 +4,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import java.io.IOException;
 
 
 /**
@@ -22,18 +23,18 @@ public class Menu extends JMenuBar {
 	public Menu(MainFrame frame) {
 		init(frame);
 	}
-	
+
 	private void init(MainFrame frame) {
-		
+
 		JMenu menu;
 		JMenuItem menuItem;
 
-		menu = new JMenu("Some Menu category");
+		menu = new JMenu("Connect");
 		this.add(menu);
 
 
-		menuItem = new JMenuItem("Some menu item 1");
-		menuItem.addActionListener(e -> anEvent(frame));
+		menuItem = new JMenuItem("Host");
+		menuItem.addActionListener(e -> host(frame));
 		menu.add(menuItem);
 		
 		menuItem = new JMenuItem("Some menu item 2");
@@ -41,13 +42,18 @@ public class Menu extends JMenuBar {
 		menu.add(menuItem);
 	}
 
-	private void anEvent(MainFrame frame) {
-	
-		String message = (String) JOptionPane.showInputDialog(frame,
-				"Send message to everyone:");
-		
-		if(message != null && !message.isEmpty()) {
-			JOptionPane.showMessageDialog(frame, message);
+	private void host(MainFrame frame) {
+		try {
+			frame.host();
+
+			// will throw exception if hosting fails, so should not be null
+			int port = frame.getServer().getPort();
+
+			String title = frame.getTitle() + " [Hosting on port " + port + "]";
+			frame.setTitle(title);
+			JOptionPane.showMessageDialog(frame, "Success!\nHosting on port " + port);
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(frame, "Unable to start host server.");
 		}
 	}
 	
