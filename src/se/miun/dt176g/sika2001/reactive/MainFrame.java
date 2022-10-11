@@ -30,6 +30,7 @@ public class MainFrame extends JFrame {
 	private int thickness;
 	private Tool tool;
 	private Server server;
+	private Observable<Shape> drawShapes;
 
 	/**
 	 * Constructs a new MainFrame.
@@ -113,7 +114,7 @@ public class MainFrame extends JFrame {
 		// Get the events of the mouse being pressed and dragged until the button is released,
 		// and use the coordinates from the events to create a new shapes depending on selected
 		// tool.
-		Disposable drawShapes = getMousePressedEvent().mergeWith(getMouseDraggedEvent())
+		drawShapes = getMousePressedEvent().mergeWith(getMouseDraggedEvent())
 				.map(e -> new Point(e.getX(), e.getY()))
 				.buffer(getMouseReleasedEvent())
 				.map(l -> {
@@ -128,7 +129,10 @@ public class MainFrame extends JFrame {
 					l.forEach(freehandLine::addPoint);
 					return freehandLine;
 				})
-				.subscribe(s -> {
+				.replay()
+				.autoConnect();
+
+				Disposable addShapes = drawShapes.subscribe(s -> {
 					DRAWING_PANEL.getDrawing().addShape(s);
 					DRAWING_PANEL.redraw();
 				});
