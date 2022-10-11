@@ -10,6 +10,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
 import javax.swing.*;
 
 /**
@@ -146,14 +148,46 @@ public class MainFrame extends JFrame {
 	 */
 	public void host() throws IOException {
 		server = new Server();
-		Disposable drawClientShapes = server.start()
+		Observable<Shape> drawClientShapes = server.start()
+				// avoid blocking UI thread when clients connect to server
 				.subscribeOn(Schedulers.io())
 				.map(s -> new ObjectInputStream(s.getInputStream()))
-				.map(s -> (Shape) s.readObject())
-				.subscribe(s -> EventQueue.invokeLater(() -> {
-					DRAWING_PANEL.getDrawing().addShape(s);
-					DRAWING_PANEL.redraw();
-				}));
+				.doOnNext(s -> System.out.println("host receiving on " + Thread.currentThread()))
+				.flatMap(s -> Observable.<Shape>create(
+						emitter -> {
+							// keep getting shapes from client
+							// readObject blocks, so use io scheduler
+							while (true) {
+								emitter.onNext((Shape) s.readObject());
+							}
+						}).subscribeOn(Schedulers.io())
+						.doOnNext(shape -> System.out.println("emitting " + shape.toString() + " on " + Thread.currentThread()))
+				)
+				// .doOnNext(s -> System.out.println("host receiving " + s.toString() + " on " + Thread.currentThread()))
+				.doFinally(() -> System.out.println("Finished!"))
+				.publish()
+				.autoConnect();
+
+		drawShapes = drawShapes.mergeWith(drawClientShapes);
+		drawShapes
+				.subscribe(s -> {
+					EventQueue.invokeLater(() -> {
+						System.out.println(Thread.currentThread());
+						DRAWING_PANEL.getDrawing().addShape(s);
+						DRAWING_PANEL.redraw();
+					});
+				});
+
+	}
+
+	public void join(int port) throws IOException {
+		Socket client = new Socket("localhost", port);
+		ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
+
+		Disposable sendShapes = drawShapes
+				.doOnNext(s -> System.out.println("client sending " + s.toString()))
+				.doFinally(() -> System.out.println("Client finished!"))
+				.subscribe(output::writeObject);
 	}
 
 	/**

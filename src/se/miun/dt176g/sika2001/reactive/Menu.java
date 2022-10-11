@@ -37,8 +37,8 @@ public class Menu extends JMenuBar {
 		menuItem.addActionListener(e -> host(frame));
 		menu.add(menuItem);
 		
-		menuItem = new JMenuItem("Some menu item 2");
-		menuItem.addActionListener(e ->  anotherEvent(frame));
+		menuItem = new JMenuItem("Join");
+		menuItem.addActionListener(e ->  join(frame));
 		menu.add(menuItem);
 	}
 
@@ -57,8 +57,18 @@ public class Menu extends JMenuBar {
 		}
 	}
 	
-	private void anotherEvent(MainFrame frame) {
-		
+	private void join(MainFrame frame) {
+		String input = JOptionPane.showInputDialog(frame, "Select a port to connect to.");
+
+		try {
+			int port = Integer.parseInt(input);
+
+			frame.join(port);
+		} catch (NumberFormatException e) {
+			JOptionPane.showMessageDialog(frame, "The port needs to be a number.");
+		} catch (IOException e) {
+			JOptionPane.showMessageDialog(frame, "Unable to connect to that port.");
+		}
 	}
 
 }
