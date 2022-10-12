@@ -217,6 +217,24 @@ public class MainFrame extends JFrame {
 				.doOnNext(s -> System.out.println("client sending " + s.toString()))
 				.doFinally(() -> System.out.println("Client finished!"))
 				.subscribe(output::writeObject);
+
+		Disposable receiveShapes = Observable.just(new ObjectInputStream(client.getInputStream()))
+				.subscribeOn(Schedulers.io())
+				.doOnNext(s -> System.out.println("client receiving input on " + Thread.currentThread()))
+				.flatMap(s -> Observable.<Shape>create(
+								emitter -> {
+									// keep getting shapes from server
+									while (true) {
+										emitter.onNext((Shape) s.readObject());
+									}
+								}).subscribeOn(Schedulers.io())
+				).subscribe(s -> {
+					EventQueue.invokeLater(() -> {
+						System.out.println(Thread.currentThread());
+						DRAWING_PANEL.getDrawing().addShape(s);
+						DRAWING_PANEL.redraw();
+					});
+				});
 	}
 
 	/**
