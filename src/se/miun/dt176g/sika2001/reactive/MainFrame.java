@@ -3,6 +3,7 @@ package se.miun.dt176g.sika2001.reactive;
 import io.reactivex.rxjava3.annotations.Nullable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.observables.ConnectableObservable;
 import io.reactivex.rxjava3.schedulers.Schedulers;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -148,36 +149,64 @@ public class MainFrame extends JFrame {
 	 */
 	public void host() throws IOException {
 		server = new Server();
-		Observable<Shape> drawClientShapes = server.start()
+
+		ConnectableObservable<Socket> clients = server.start()
 				// avoid blocking UI thread when clients connect to server
 				.subscribeOn(Schedulers.io())
-				.map(s -> new ObjectInputStream(s.getInputStream()))
-				.doOnNext(s -> System.out.println("host receiving on " + Thread.currentThread()))
-				.flatMap(s -> Observable.<Shape>create(
-						emitter -> {
-							// keep getting shapes from client
-							// readObject blocks, so use io scheduler
-							while (true) {
-								emitter.onNext((Shape) s.readObject());
-							}
-						}).subscribeOn(Schedulers.io())
-						.doOnNext(shape -> System.out.println("emitting " + shape.toString() + " on " + Thread.currentThread()))
-				)
-				// .doOnNext(s -> System.out.println("host receiving " + s.toString() + " on " + Thread.currentThread()))
-				.doFinally(() -> System.out.println("Finished!"))
-				.publish()
-				.autoConnect();
+				.publish();
+
+		Observable<Shape> drawClientShapes = clients
+				.flatMap(socket -> Observable.just(new ObjectInputStream(socket.getInputStream()))
+						.subscribeOn(Schedulers.io())
+						.doOnNext(__ -> System.out.println("host receiving on " + Thread.currentThread()))
+						.flatMap(stream -> Observable.<Shape>create(
+								emitter -> {
+									// keep getting shapes from client
+									// readObject blocks, so use io scheduler
+									while (true) {
+										System.out.println(socket);
+										System.out.println(stream);
+										System.out.println("READING OBJECT ON " + Thread.currentThread());
+										try {
+											// FIXME: java.io.StreamCorruptedException when second client sends Shape
+											emitter.onNext((Shape) stream.readObject());
+										} catch (Exception e) {
+											emitter.onError(e);
+											JOptionPane.showMessageDialog(
+													this,
+													"Error reading shape from client\n"
+															+ e.getMessage()
+											);
+										}
+									}
+								}).doOnError(e -> System.out.println("Error: " + e.getMessage()))
+								.subscribeOn(Schedulers.io()) // FIXME: needed?
+						)
+				).doOnError(e -> System.out.println("Error: " + e.getMessage()));
 
 		drawShapes = drawShapes.mergeWith(drawClientShapes);
 		drawShapes
+				.distinct()
 				.subscribe(s -> {
 					EventQueue.invokeLater(() -> {
-						System.out.println(Thread.currentThread());
+						System.out.println("Drawing shape on" + Thread.currentThread());
 						DRAWING_PANEL.getDrawing().addShape(s);
 						DRAWING_PANEL.redraw();
 					});
 				});
 
+		clients.flatMap(s -> Observable.just(new ObjectOutputStream(s.getOutputStream()))
+				.subscribeOn(Schedulers.io())
+				.repeat()
+				.zipWith(drawShapes, (out, shape) -> {
+					System.out.println("host sending shape to client on thread " + Thread.currentThread());
+					out.writeObject(shape);
+					return shape;
+				})
+				.doOnNext(shape -> System.out.println("host sending " + shape.toString() + " on " + Thread.currentThread()))
+		).subscribe(s -> System.out.println("Subscribe: Send shapes to clients"));
+
+		clients.connect();
 	}
 
 	public void join(int port) throws IOException {
