@@ -139,7 +139,6 @@ public class MainFrame extends JFrame {
 					DRAWING_PANEL.getDrawing().addShape(s);
 					DRAWING_PANEL.redraw();
 				});
-
 	}
 
 	/**
@@ -150,13 +149,14 @@ public class MainFrame extends JFrame {
 	public void host() throws IOException {
 		server = new Server();
 
-		ConnectableObservable<Socket> clients = server.start()
+		ConnectableObservable<Client> clients = server.start()
 				// avoid blocking UI thread when clients connect to server
 				.subscribeOn(Schedulers.io())
+				.map(Client::new)
 				.publish();
 
 		Observable<Shape> drawClientShapes = clients
-				.flatMap(socket -> Observable.just(new ObjectInputStream(socket.getInputStream()))
+				.map(socket -> socket.getInput())
 						.subscribeOn(Schedulers.io())
 						.doOnNext(__ -> System.out.println("host receiving on " + Thread.currentThread()))
 						.flatMap(stream -> Observable.<Shape>create(
@@ -164,11 +164,7 @@ public class MainFrame extends JFrame {
 									// keep getting shapes from client
 									// readObject blocks, so use io scheduler
 									while (true) {
-										System.out.println(socket);
-										System.out.println(stream);
-										System.out.println("READING OBJECT ON " + Thread.currentThread());
 										try {
-											// FIXME: java.io.StreamCorruptedException when second client sends Shape
 											emitter.onNext((Shape) stream.readObject());
 										} catch (Exception e) {
 											emitter.onError(e);
@@ -181,11 +177,13 @@ public class MainFrame extends JFrame {
 									}
 								}).doOnError(e -> System.out.println("Error: " + e.getMessage()))
 								.subscribeOn(Schedulers.io()) // FIXME: needed?
-						)
-				).doOnError(e -> System.out.println("Error: " + e.getMessage()));
+				).doOnError(e -> System.out.println("Error: " + e.getMessage()))
+				.replay()
+				.autoConnect();
 
-		drawShapes = drawShapes.mergeWith(drawClientShapes);
-		drawShapes
+		Observable<Shape> allShapes = Observable.merge(drawShapes, drawClientShapes);
+
+		allShapes
 				.distinct()
 				.subscribe(s -> {
 					EventQueue.invokeLater(() -> {
@@ -195,15 +193,17 @@ public class MainFrame extends JFrame {
 					});
 				});
 
-		clients.flatMap(s -> Observable.just(new ObjectOutputStream(s.getOutputStream()))
+		clients
+				.flatMap(s -> Observable.just(s.getOutput())
 				.subscribeOn(Schedulers.io())
 				.repeat()
-				.zipWith(drawShapes, (out, shape) -> {
+				.zipWith(allShapes, (out, shape) -> {
 					System.out.println("host sending shape to client on thread " + Thread.currentThread());
 					out.writeObject(shape);
 					return shape;
 				})
-				.doOnNext(shape -> System.out.println("host sending " + shape.toString() + " on " + Thread.currentThread()))
+				.doOnNext(shape -> System.out.println("host sending " + shape.toString() + " on " + Thread.currentThread())
+				)
 		).subscribe(s -> System.out.println("Subscribe: Send shapes to clients"));
 
 		clients.connect();
