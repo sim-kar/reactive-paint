@@ -210,31 +210,39 @@ public class MainFrame extends JFrame {
 	}
 
 	public void join(int port) throws IOException {
-		Socket client = new Socket("localhost", port);
-		ObjectOutputStream output = new ObjectOutputStream(client.getOutputStream());
-
-		Disposable sendShapes = drawShapes
-				.doOnNext(s -> System.out.println("client sending " + s.toString()))
-				.doFinally(() -> System.out.println("Client finished!"))
-				.subscribe(output::writeObject);
-
-		Disposable receiveShapes = Observable.just(new ObjectInputStream(client.getInputStream()))
+		ConnectableObservable<Socket> client = Observable.just(port)
 				.subscribeOn(Schedulers.io())
-				.doOnNext(s -> System.out.println("client receiving input on " + Thread.currentThread()))
-				.flatMap(s -> Observable.<Shape>create(
-								emitter -> {
-									// keep getting shapes from server
-									while (true) {
-										emitter.onNext((Shape) s.readObject());
-									}
-								}).subscribeOn(Schedulers.io())
-				).subscribe(s -> {
-					EventQueue.invokeLater(() -> {
-						System.out.println(Thread.currentThread());
-						DRAWING_PANEL.getDrawing().addShape(s);
-						DRAWING_PANEL.redraw();
-					});
-				});
+				.map(p -> new Socket("localhost", p))
+				.publish();
+
+		Disposable sendShapes = client
+				.map(c -> new ObjectOutputStream(c.getOutputStream()))
+				.flatMap(c -> drawShapes
+						.map(s -> {
+							c.writeObject(s);
+							return s;
+						}).subscribeOn(Schedulers.io())
+				)
+				.subscribe();
+
+		Disposable receiveShapes = client.map(c -> new ObjectInputStream(c.getInputStream()))
+				.flatMap(c -> Observable.<Shape>create(
+						emitter -> {
+							// keep getting shapes from server
+							while (true) {
+								System.out.println("client read");
+								emitter.onNext((Shape) c.readObject());
+							}
+						})
+						.subscribeOn(Schedulers.io())
+				)
+				.subscribe(s -> EventQueue.invokeLater(() -> {
+					System.out.println(Thread.currentThread());
+					DRAWING_PANEL.getDrawing().addShape(s);
+					DRAWING_PANEL.redraw();
+				}));
+
+		client.connect();
 	}
 
 	/**
