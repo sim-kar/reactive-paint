@@ -14,8 +14,9 @@ public class Client {
     public Client(Socket clientSocket) throws IOException {
         this.clientSocket = clientSocket;
 
-        this.input = new ObjectInputStream(clientSocket.getInputStream());
+        // output stream needs to be initialized before input stream, or it will block forever
         this.output = new ObjectOutputStream(clientSocket.getOutputStream());
+        this.input = new ObjectInputStream(clientSocket.getInputStream());
         System.out.println("Client class init finished!");
     }
 
