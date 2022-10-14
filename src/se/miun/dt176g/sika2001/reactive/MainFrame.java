@@ -210,34 +210,32 @@ public class MainFrame extends JFrame {
 	}
 
 	public void join(int port) throws IOException {
-		ConnectableObservable<Socket> client = Observable.just(port)
+		ConnectableObservable<Client> client = Observable.just(port)
 				.subscribeOn(Schedulers.io())
 				.map(p -> new Socket("localhost", p))
+				.map(Client::new)
 				.publish();
 
 		Disposable sendShapes = client
-				.map(c -> new ObjectOutputStream(c.getOutputStream()))
 				.flatMap(c -> drawShapes
 						.map(s -> {
-							c.writeObject(s);
+							c.write(s);
 							return s;
 						}).subscribeOn(Schedulers.io())
 				)
 				.subscribe();
 
-		Disposable receiveShapes = client.map(c -> new ObjectInputStream(c.getInputStream()))
+		Disposable receiveShapes = client
 				.flatMap(c -> Observable.<Shape>create(
 						emitter -> {
 							// keep getting shapes from server
 							while (true) {
-								System.out.println("client read");
-								emitter.onNext((Shape) c.readObject());
+								emitter.onNext((Shape) c.read());
 							}
 						})
 						.subscribeOn(Schedulers.io())
 				)
 				.subscribe(s -> EventQueue.invokeLater(() -> {
-					System.out.println(Thread.currentThread());
 					DRAWING_PANEL.getDrawing().addShape(s);
 					DRAWING_PANEL.redraw();
 				}));
