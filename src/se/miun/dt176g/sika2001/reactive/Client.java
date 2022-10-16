@@ -17,7 +17,6 @@ public class Client {
         // output stream needs to be initialized before input stream, or it will block forever
         this.output = new ObjectOutputStream(clientSocket.getOutputStream());
         this.input = new ObjectInputStream(clientSocket.getInputStream());
-        System.out.println("Client class init finished!");
     }
 
     public Object read() throws IOException, ClassNotFoundException {
@@ -34,5 +33,13 @@ public class Client {
 
     public ObjectOutputStream getOutput() {
         return this.output;
+    }
+
+    public void shutdown() throws IOException {
+        clientSocket.close();
+    }
+
+    public boolean isShutdown() {
+        return clientSocket.isClosed();
     }
 }
