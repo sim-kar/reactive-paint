@@ -10,8 +10,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.Socket;
 import javax.swing.*;
 
@@ -33,7 +31,7 @@ public class MainFrame extends JFrame {
 	private int thickness;
 	private Tool tool;
 	private Server server;
-	private Observable<Shape> drawShapes;
+	private final Observable<Shape> drawShapes;
 
 	/**
 	 * Constructs a new MainFrame.
@@ -114,10 +112,241 @@ public class MainFrame extends JFrame {
 		Disposable setThickness = getSliderValue(thicknessSlider)
 				.subscribe(i -> this.thickness = i);
 
+		drawShapes = drawShapes()
+				.replay()
+				.autoConnect();
+
+		Disposable addShapes = drawShapes.subscribe(this::addShapeToDrawing);
+	}
+
+	/**
+	 * Start hosting a server that others can connect to using the same port number. All shapes
+	 * drawn by the host and connected clients will be shared.
+	 *
+	 * @throws IOException if an I/O error occurs when opening the server socket
+	 */
+	public void host() throws IOException {
+		ConnectableObservable<Client> clients = getClients().publish();
+
+		Observable<Shape> clientShapes = getShapesFromClients(clients)
+				.retry() // keep observable going if a client disconnects
+				.replay()
+				.autoConnect();
+
+		Disposable receiveShapes = clientShapes.subscribe(this::addShapeToDrawing);
+
+		Observable<Shape> allShapes = Observable.merge(drawShapes, clientShapes);
+
+		Disposable sendShapes = sendShapesToClients(clients, allShapes).subscribe();
+
+		Disposable startHosting = clients.connect();
+	}
+
+	/**
+	 * Join a server that is hosted at the given port. Drawn shapes will be shared among the host
+	 * and all connected clients.
+	 *
+	 * @param port the host's port
+	 * @throws IOException if an I/O error occurs when connecting to the host
+	 */
+	public void join(int port) throws IOException {
+		ConnectableObservable<Client> client = getClientConnectedToHost(port).publish();
+
+		Disposable sendShapes = sendShapesToHost(client, drawShapes).subscribe(
+				__ -> {},
+				e -> JOptionPane.showMessageDialog(
+						this,
+						"Error sending shape to host\n"
+								+ e.getMessage()
+				)
+		);
+
+		Disposable receiveShapes = getShapesFromHost(client).subscribe(
+				this::addShapeToDrawing,
+				e -> JOptionPane.showMessageDialog(
+						this,
+						"Error receiving shape from host\n"
+								+ e.getMessage()
+				)
+		);
+
+		Disposable connectToHost = client.connect();
+	}
+
+	/**
+	 * Get the server if this MainFrame is hosting. Will return null otherwise.
+	 *
+	 * @return the server, or null if not hosting
+	 */
+	public @Nullable Server getServer() {
+		return server;
+	}
+
+	/**
+	 * Add a shape to the drawing. It will be drawn on Swing's Event Dispatch Thread.
+	 *
+	 * @param shape the shape to add
+	 */
+	private void addShapeToDrawing(Shape shape) {
+		EventQueue.invokeLater(() -> {
+			DRAWING_PANEL.getDrawing().addShape(shape);
+			DRAWING_PANEL.redraw();
+		});
+	}
+
+	/**
+	 * Get an observable of all connected {@link Client}s. The observable listens for clients on
+	 * the I/O scheduler.
+	 *
+	 * @return the Observable
+	 * @throws IOException if an I/O exception occurs when the listening server's socket is opened
+	 */
+	private Observable<Client> getClients() throws IOException {
+		server = new Server();
+
+		return server.start()
+				// avoid blocking UI thread when clients connect to server
+				.subscribeOn(Schedulers.io())
+				.map(Client::new);
+	}
+
+	/**
+	 * Get an observable of shapes received from clients connected to the host. The Observable is
+	 * subscribed on the I/O scheduler.
+	 *
+	 * @param clients an observable of connected clients
+	 * @return the observable
+	 */
+	private Observable<Shape> getShapesFromClients(ConnectableObservable<Client> clients) {
+		return clients.flatMap(client -> Observable.<Shape>create(
+				emitter -> {
+					// keep getting shapes from client
+					// readObject blocks, so use io scheduler
+					while (!client.isShutdown()) {
+						try {
+							emitter.onNext((Shape) client.read());
+						} catch (Exception e) {
+							emitter.onError(e);
+
+							// shut down if the client has disconnected
+							client.shutdown();
+
+							JOptionPane.showMessageDialog(
+									this,
+									"Error reading shape from client\n"
+											+ e.getMessage()
+							);
+						}
+					}
+				}).subscribeOn(Schedulers.io())
+		);
+	}
+
+	/**
+	 * An observable that sends the given shapes to the given clients. The observable is subscribed
+	 * to the I/O scheduler.
+	 *
+	 * @param clients the clients to send shapes to
+	 * @param shapes the shapes to send
+	 * @return the observable
+	 */
+	private Observable<Shape> sendShapesToClients(ConnectableObservable<Client> clients,
+												  Observable<Shape> shapes) {
+		return clients.flatMap(c -> Observable.just(c)
+				.subscribeOn(Schedulers.io())
+				.repeat()
+				.zipWith(shapes, (client, shape) -> {
+					if (client.isShutdown()) return shape;
+
+					try {
+						client.write(shape);
+					} catch (Exception e) {
+						// shut down if the client has disconnected
+						client.shutdown();
+
+						JOptionPane.showMessageDialog(
+								this,
+								"Error writing shape to client\n"
+										+ e.getMessage()
+						);
+					}
+
+					return shape;
+				})
+		);
+	}
+
+	/**
+	 * Get a client that is connected to the host at the given port, which can be used to send
+	 * and receive shapes to the host. The observable is subscribed to the I/O scheduler.
+	 *
+	 * @param port the port of the host to connect to
+	 * @return the observable
+	 */
+	private Observable<Client> getClientConnectedToHost(int port) {
+		return Observable.just(port)
+				.subscribeOn(Schedulers.io())
+				.map(p -> new Socket("localhost", p))
+				.map(Client::new);
+	}
+
+	/**
+	 * An observable that sends the given shapes to the host the given client is connected to. The
+	 * observable is subscribed to the I/O scheduler.
+	 *
+	 * @param client the client connected to the host to send the shapes to
+	 * @param shapes the shapes to send
+	 * @return the observable
+	 */
+	private Observable<Shape> sendShapesToHost(ConnectableObservable<Client> client,
+											   Observable<Shape> shapes) {
+		return client.flatMap(c -> shapes
+				.map(s -> {
+					try {
+						c.write(s);
+					} catch (Exception e) {
+						c.shutdown();
+						throw e;
+					}
+					return s;
+				})
+				.subscribeOn(Schedulers.io())
+		);
+	}
+
+	/**
+	 * Get an observable of shapes received from the host the given client is connected to. The
+	 * observable is subscribed to the I/O scheduler.
+	 *
+	 * @param client the client connected to the host to receive shapes from
+	 * @return the observable
+	 */
+	private Observable<Shape> getShapesFromHost(ConnectableObservable<Client> client) {
+		return client.flatMap(c -> Observable.<Shape>create(
+				emitter -> {
+					// keep getting shapes from server
+					while (!c.isShutdown()) {
+						try {
+							emitter.onNext((Shape) c.read());
+						} catch (Exception e) {
+							emitter.onError(e);
+							c.shutdown();
+						}
+					}
+				}).subscribeOn(Schedulers.io())
+		);
+	}
+
+	/**
+	 * Get an Observable that emits drawn shapes. The emitted shapes depend on the selected tool,
+	 * color and thickness.
+	 *
+	 * @return the Observable of the shapes
+	 */
+	private Observable<Shape> drawShapes() {
 		// Get the events of the mouse being pressed and dragged until the button is released,
-		// and use the coordinates from the events to create a new shapes depending on selected
-		// tool.
-		drawShapes = getMousePressedEvent().mergeWith(getMouseDraggedEvent())
+		// and use the coordinates from the events to create a new shapes
+		return getMousePressedEvent().mergeWith(getMouseDraggedEvent())
 				.map(e -> new Point(e.getX(), e.getY()))
 				.buffer(getMouseReleasedEvent())
 				.map(l -> {
@@ -131,157 +360,7 @@ public class MainFrame extends JFrame {
 					FreehandLine freehandLine = new FreehandLine(start, end, thickness, color);
 					l.forEach(freehandLine::addPoint);
 					return freehandLine;
-				})
-				.replay()
-				.autoConnect();
-
-				Disposable addShapes = drawShapes.subscribe(s -> {
-					DRAWING_PANEL.getDrawing().addShape(s);
-					DRAWING_PANEL.redraw();
 				});
-	}
-
-	/**
-	 * Start hosting a server that others can connect to using the same port number.
-	 *
-	 * @throws IOException if an I/O error occurs when opening the server socket
-	 */
-	public void host() throws IOException {
-		server = new Server();
-
-		ConnectableObservable<Client> clients = server.start()
-				// avoid blocking UI thread when clients connect to server
-				.subscribeOn(Schedulers.io())
-				.map(Client::new)
-				.publish();
-
-		Observable<Shape> clientShapes = clients
-				.flatMap(client -> Observable.<Shape>create(
-						emitter -> {
-							// keep getting shapes from client
-							// readObject blocks, so use io scheduler
-							while (!client.isShutdown()) {
-								try {
-									emitter.onNext((Shape) client.read());
-								} catch (Exception e) {
-									emitter.onError(e);
-
-									// shut down if the client has disconnected
-									client.shutdown();
-
-									JOptionPane.showMessageDialog(
-											this,
-											"Error reading shape from client\n"
-													+ e.getMessage()
-									);
-								}
-							}
-						}).subscribeOn(Schedulers.io())
-				)
-				.retry() // keep observable going if a client disconnects
-				.replay()
-				.autoConnect();
-
-		Disposable receiveShapes = clientShapes.subscribe(s -> EventQueue.invokeLater(() -> {
-					DRAWING_PANEL.getDrawing().addShape(s);
-					DRAWING_PANEL.redraw();
-		}));
-
-		Observable<Shape> allShapes = Observable.merge(drawShapes, clientShapes);
-
-		Disposable sendShapes = clients.flatMap(c -> Observable.just(c)
-						.subscribeOn(Schedulers.io())
-						.repeat()
-						.zipWith(allShapes, (client, shape) -> {
-							if (client.isShutdown()) return shape;
-
-							try {
-								client.write(shape);
-							} catch (Exception e) {
-								// shut down if the client has disconnected
-								client.shutdown();
-
-								JOptionPane.showMessageDialog(
-										this,
-										"Error writing shape to client\n"
-												+ e.getMessage()
-								);
-							}
-
-							return shape;
-						})
-		).subscribe();
-
-		Disposable startServer = clients.connect();
-	}
-
-	public void join(int port) throws IOException {
-		ConnectableObservable<Client> client = Observable.just(port)
-				.subscribeOn(Schedulers.io())
-				.map(p -> new Socket("localhost", p))
-				.map(Client::new)
-				.publish();
-
-		Disposable sendShapes = client
-				.flatMap(c -> drawShapes
-						.map(s -> {
-							try {
-								c.write(s);
-							} catch (Exception e) {
-								c.shutdown();
-								throw e;
-							}
-							return s;
-						})
-						.subscribeOn(Schedulers.io())
-				)
-				.subscribe(
-						__ -> {},
-						e -> JOptionPane.showMessageDialog(
-						this,
-						"Error sending shape to host\n"
-								+ e.getMessage()
-						)
-				);
-
-		Disposable receiveShapes = client
-				.flatMap(c -> Observable.<Shape>create(
-						emitter -> {
-							// keep getting shapes from server
-							while (!c.isShutdown()) {
-								try {
-									emitter.onNext((Shape) c.read());
-								} catch (Exception e) {
-									emitter.onError(e);
-									c.shutdown();
-								}
-							}
-						})
-						.subscribeOn(Schedulers.io())
-						.doOnNext(s -> System.out.println("Receiving from host " + c))
-				)
-				.subscribe(
-						s -> EventQueue.invokeLater(() -> {
-							DRAWING_PANEL.getDrawing().addShape(s);
-							DRAWING_PANEL.redraw();
-						}),
-						e -> JOptionPane.showMessageDialog(
-								this,
-								"Error receiving shape from host\n"
-										+ e.getMessage()
-						)
-				);
-
-		Disposable joinServer = client.connect();
-	}
-
-	/**
-	 * Get the server if this MainFrame is hosting. Will return null otherwise.
-	 *
-	 * @return the server, or null if not hosting
-	 */
-	public @Nullable Server getServer() {
-		return server;
 	}
 
 	/**
