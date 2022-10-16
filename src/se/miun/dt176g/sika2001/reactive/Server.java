@@ -24,8 +24,8 @@ public class Server {
     }
 
     /**
-     * Starts listening for clients. Returns an Observable of all connected clients
-     * (as {@link Socket}s). Dispose of the Observable to stop the server.
+     * Starts listening for clients. Returns a new Observable of all connected clients
+     * (as {@link Socket}s) each time it is called. Dispose of the Observable to stop the server.
      *
      * @return an Observable of connected clients as Sockets
      */
