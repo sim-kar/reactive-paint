@@ -46,8 +46,7 @@ public class Menu extends JMenuBar {
 		try {
 			frame.host();
 
-			// will throw exception if hosting fails, so should not be null
-			int port = frame.getServer().getPort();
+			int port = frame.getPort();
 
 			String title = frame.getTitle() + " [Hosting on port " + port + "]";
 			frame.setTitle(title);

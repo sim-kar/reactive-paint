@@ -174,12 +174,16 @@ public class MainFrame extends JFrame {
 	}
 
 	/**
-	 * Get the server if this MainFrame is hosting. Will return null otherwise.
+	 * Get the port number that this MainFrame is hosting at. Will return -1 if not hosting.
 	 *
-	 * @return the server, or null if not hosting
+	 * @return the port number; or -1 if not hosting
 	 */
-	public @Nullable Server getServer() {
-		return server;
+	public int getPort() {
+		if (server != null) {
+			return server.getPort();
+		}
+
+		return -1;
 	}
 
 	/**
