@@ -156,43 +156,63 @@ public class MainFrame extends JFrame {
 				.publish();
 
 		Observable<Shape> clientShapes = clients
-						.flatMap(client -> Observable.<Shape>create(
-								emitter -> {
-									// keep getting shapes from client
-									// readObject blocks, so use io scheduler
-									while (true) {
-										try {
-											emitter.onNext((Shape) client.read());
-										} catch (Exception e) {
-											emitter.onError(e);
-											JOptionPane.showMessageDialog(
-													this,
-													"Error reading shape from client\n"
-															+ e.getMessage()
-											);
-										}
-									}
-								}).subscribeOn(Schedulers.io())
-				).replay()
+				.flatMap(client -> Observable.<Shape>create(
+						emitter -> {
+							// keep getting shapes from client
+							// readObject blocks, so use io scheduler
+							while (!client.isShutdown()) {
+								try {
+									emitter.onNext((Shape) client.read());
+								} catch (Exception e) {
+									emitter.onError(e);
+
+									// shut down if the client has disconnected
+									client.shutdown();
+
+									JOptionPane.showMessageDialog(
+											this,
+											"Error reading shape from client\n"
+													+ e.getMessage()
+									);
+								}
+							}
+						}).subscribeOn(Schedulers.io())
+				)
+				.retry() // keep observable going if a client disconnects
+				.replay()
 				.autoConnect();
 
-		clientShapes.subscribe(s -> EventQueue.invokeLater(() -> {
-			DRAWING_PANEL.getDrawing().addShape(s);
-			DRAWING_PANEL.redraw();
+		Disposable receiveShapes = clientShapes.subscribe(s -> EventQueue.invokeLater(() -> {
+					DRAWING_PANEL.getDrawing().addShape(s);
+					DRAWING_PANEL.redraw();
 		}));
 
 		Observable<Shape> allShapes = Observable.merge(drawShapes, clientShapes);
 
-		clients.flatMap(c -> Observable.just(c)
+		Disposable sendShapes = clients.flatMap(c -> Observable.just(c)
 						.subscribeOn(Schedulers.io())
 						.repeat()
 						.zipWith(allShapes, (client, shape) -> {
-							client.write(shape);
+							if (client.isShutdown()) return shape;
+
+							try {
+								client.write(shape);
+							} catch (Exception e) {
+								// shut down if the client has disconnected
+								client.shutdown();
+
+								JOptionPane.showMessageDialog(
+										this,
+										"Error writing shape to client\n"
+												+ e.getMessage()
+								);
+							}
+
 							return shape;
 						})
 		).subscribe();
 
-		clients.connect();
+		Disposable startServer = clients.connect();
 	}
 
 	public void join(int port) throws IOException {
@@ -205,28 +225,54 @@ public class MainFrame extends JFrame {
 		Disposable sendShapes = client
 				.flatMap(c -> drawShapes
 						.map(s -> {
-							c.write(s);
+							try {
+								c.write(s);
+							} catch (Exception e) {
+								c.shutdown();
+								throw e;
+							}
 							return s;
-						}).subscribeOn(Schedulers.io())
+						})
+						.subscribeOn(Schedulers.io())
 				)
-				.subscribe();
+				.subscribe(
+						__ -> {},
+						e -> JOptionPane.showMessageDialog(
+						this,
+						"Error sending shape to host\n"
+								+ e.getMessage()
+						)
+				);
 
 		Disposable receiveShapes = client
 				.flatMap(c -> Observable.<Shape>create(
 						emitter -> {
 							// keep getting shapes from server
-							while (true) {
-								emitter.onNext((Shape) c.read());
+							while (!c.isShutdown()) {
+								try {
+									emitter.onNext((Shape) c.read());
+								} catch (Exception e) {
+									emitter.onError(e);
+									c.shutdown();
+								}
 							}
 						})
 						.subscribeOn(Schedulers.io())
+						.doOnNext(s -> System.out.println("Receiving from host " + c))
 				)
-				.subscribe(s -> EventQueue.invokeLater(() -> {
-					DRAWING_PANEL.getDrawing().addShape(s);
-					DRAWING_PANEL.redraw();
-				}));
+				.subscribe(
+						s -> EventQueue.invokeLater(() -> {
+							DRAWING_PANEL.getDrawing().addShape(s);
+							DRAWING_PANEL.redraw();
+						}),
+						e -> JOptionPane.showMessageDialog(
+								this,
+								"Error receiving shape from host\n"
+										+ e.getMessage()
+						)
+				);
 
-		client.connect();
+		Disposable joinServer = client.connect();
 	}
 
 	/**
