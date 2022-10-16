@@ -32,7 +32,12 @@ public class Server {
     public Observable<Socket> start() {
         return Observable.<Socket>create(emitter -> {
             while (!emitter.isDisposed()) { // keep server active until disposed
-                emitter.onNext(serverSocket.accept());
+                try {
+                    emitter.onNext(serverSocket.accept());
+                } catch (Exception e) {
+                    emitter.onError(e);
+                }
+
             }
         });
     }
