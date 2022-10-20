@@ -129,6 +129,12 @@ public class MainFrame extends JFrame {
 		ConnectableObservable<Client> clients = getClients().publish();
 
 		Observable<Shape> clientShapes = getShapesFromClients(clients)
+				// handle error here since it will be stifled by retry otherwise
+				.doOnError(e -> JOptionPane.showMessageDialog(
+						this,
+						"Error communicating with client\n"
+								+ e.getMessage())
+				)
 				.retry() // keep observable going if a client disconnects
 				.replay()
 				.autoConnect();
@@ -234,12 +240,6 @@ public class MainFrame extends JFrame {
 
 							// shut down if the client has disconnected
 							client.shutdown();
-
-							JOptionPane.showMessageDialog(
-									this,
-									"Error reading shape from client\n"
-											+ e.getMessage()
-							);
 						}
 					}
 				}).subscribeOn(Schedulers.io())
@@ -267,12 +267,7 @@ public class MainFrame extends JFrame {
 					} catch (Exception e) {
 						// shut down if the client has disconnected
 						client.shutdown();
-
-						JOptionPane.showMessageDialog(
-								this,
-								"Error writing shape to client\n"
-										+ e.getMessage()
-						);
+						throw e;
 					}
 
 					return shape;
