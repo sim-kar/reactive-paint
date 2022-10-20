@@ -242,6 +242,7 @@ public class MainFrame extends JFrame {
 							client.shutdown();
 						}
 					}
+					emitter.onComplete();
 				}).subscribeOn(Schedulers.io())
 		);
 	}
@@ -332,6 +333,7 @@ public class MainFrame extends JFrame {
 							c.shutdown();
 						}
 					}
+					emitter.onComplete();
 				}).subscribeOn(Schedulers.io())
 		);
 	}
