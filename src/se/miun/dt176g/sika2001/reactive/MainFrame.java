@@ -1,6 +1,5 @@
 package se.miun.dt176g.sika2001.reactive;
 
-import io.reactivex.rxjava3.annotations.Nullable;
 import io.reactivex.rxjava3.core.Observable;
 import io.reactivex.rxjava3.disposables.Disposable;
 import io.reactivex.rxjava3.observables.ConnectableObservable;
@@ -11,6 +10,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import javax.swing.*;
 
 /**
@@ -353,18 +353,27 @@ public class MainFrame extends JFrame {
 		return getMousePressedEvent().mergeWith(getMouseDraggedEvent())
 				.map(e -> new Point(e.getX(), e.getY()))
 				.buffer(getMouseReleasedEvent())
-				.map(l -> {
-					Point start = l.get(0);
-					Point end = l.get(l.size() - 1);
+				.map(this::createShape);
+	}
 
-					if (tool == Tool.LINE) return new Line(start, end, thickness, color);
-					if (tool == Tool.OVAL ) return new Oval(start, end, thickness, color);
-					if (tool == Tool.RECTANGLE) return new Rectangle(start, end, thickness, color);
+	/**
+	 * Create a new {@link Shape} from the given {@link Point}s. The concrete shape that is created
+	 * is determined by the currently selected tool.
+	 *
+	 * @param points the points to create the shape from
+	 * @return the shape
+	 */
+	private Shape createShape(List<Point> points) {
+		Point start = points.get(0);
+		Point end = points.get(points.size() - 1);
 
-					FreehandLine freehandLine = new FreehandLine(start, end, thickness, color);
-					l.forEach(freehandLine::addPoint);
-					return freehandLine;
-				});
+		if (tool == Tool.LINE) return new Line(start, end, thickness, color);
+		if (tool == Tool.OVAL ) return new Oval(start, end, thickness, color);
+		if (tool == Tool.RECTANGLE) return new Rectangle(start, end, thickness, color);
+
+		FreehandLine freehandLine = new FreehandLine(start, end, thickness, color);
+		points.forEach(freehandLine::addPoint);
+		return freehandLine;
 	}
 
 	/**
