@@ -133,7 +133,7 @@ public class MainFrame extends JFrame {
 		Observable<Shape> clientShapes = getShapesFromClients(clients)
 				// handle error here since it will be stifled by retry otherwise
 				.doOnError(e -> displayError(e, "Error communicating with client:"))
-				.retry() // keep observable going if a client disconnects
+				.retry()
 				.replay()
 				.autoConnect();
 
@@ -217,7 +217,6 @@ public class MainFrame extends JFrame {
 	private Observable<Client> getClients(Observable<Server> listeningServer) {
 		return listeningServer.map(Server::start)
 				.flatMap(socket -> socket.map(Client::new)
-						// avoid blocking UI thread when clients connect to server
 						.subscribeOn(Schedulers.io())
 				);
 	}
