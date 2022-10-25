@@ -10,6 +10,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.List;
 import javax.swing.*;
 
@@ -248,10 +249,19 @@ public class MainFrame extends JFrame {
 					while (!client.isShutdown()) {
 						try {
 							emitter.onNext((Shape) client.read());
+						} catch (SocketException e) {
+							// if we propagate the error when a client disconnects, the observable
+							// getting shapes from clients will restart, meaning all clients will be
+							// disconnected. We avoid that by handling the error here instead
+							JOptionPane.showMessageDialog(
+									this,
+									"Client disconnected\n"
+											+ e.getMessage()
+							);
+
+							client.shutdown();
 						} catch (Exception e) {
 							emitter.onError(e);
-
-							// shut down if the client has disconnected
 							client.shutdown();
 						}
 					}
