@@ -30,7 +30,7 @@ public class MainFrame extends JFrame {
 	private Color color;
 	private int thickness;
 	private Tool tool;
-	private Server server;
+	private Observable<Server> server;
 	private final Observable<Shape> drawShapes;
 
 	/**
@@ -126,7 +126,8 @@ public class MainFrame extends JFrame {
 	 * @throws IOException if an I/O error occurs when opening the server socket
 	 */
 	public void host() throws IOException {
-		ConnectableObservable<Client> clients = getClients().publish();
+		startServer();
+		ConnectableObservable<Client> clients = getClients(server).publish();
 
 		Observable<Shape> clientShapes = getShapesFromClients(clients)
 				// handle error here since it will be stifled by retry otherwise
@@ -180,16 +181,17 @@ public class MainFrame extends JFrame {
 	}
 
 	/**
-	 * Get the port number that this MainFrame is hosting at. Will return -1 if not hosting.
+	 * Get an Observable with the port number that this MainFrame is hosting at.
+	 * Will return an empty Observable if not hosting.
 	 *
-	 * @return the port number; or -1 if not hosting
+	 * @return the observable
 	 */
-	public int getPort() {
+	public Observable<Integer> getPort() {
 		if (server != null) {
-			return server.getPort();
+			return server.map(Server::getPort);
 		}
 
-		return -1;
+		return Observable.empty();
 	}
 
 	/**
@@ -205,19 +207,30 @@ public class MainFrame extends JFrame {
 	}
 
 	/**
-	 * Get an observable of all connected {@link Client}s. The observable listens for clients on
-	 * the I/O scheduler.
+	 * Starts a new server, if one isn't started already. To avoid blocking the EDT, the server is
+	 * subscribed to the I/O scheduler.
 	 *
-	 * @return the Observable
 	 * @throws IOException if an I/O exception occurs when the listening server's socket is opened
 	 */
-	private Observable<Client> getClients() throws IOException {
-		server = new Server();
+	private void startServer() throws IOException {
+		if (server == null) {
+			server = Observable.just(new Server())
+					.subscribeOn(Schedulers.io());
+		}
+	}
 
-		return server.start()
-				// avoid blocking UI thread when clients connect to server
-				.subscribeOn(Schedulers.io())
-				.map(Client::new);
+	/**
+	 * Get an observable of all {@link Client}s connected to the given {@link Server}.
+	 *
+	 * @param listeningServer an observable with the server listening for clients
+	 * @return the Observable
+	 */
+	private Observable<Client> getClients(Observable<Server> listeningServer) {
+		return listeningServer.map(Server::start)
+				.flatMap(socket -> socket.map(Client::new)
+						// avoid blocking UI thread when clients connect to server
+						.subscribeOn(Schedulers.io())
+				);
 	}
 
 	/**

@@ -46,11 +46,10 @@ public class Menu extends JMenuBar {
 		try {
 			frame.host();
 
-			int port = frame.getPort();
-
-			String title = frame.getTitle() + " [Hosting on port " + port + "]";
-			frame.setTitle(title);
-			JOptionPane.showMessageDialog(frame, "Success!\nHosting on port " + port);
+			frame.getPort().subscribe(port -> {
+				frame.setTitle(frame.getTitle() + " [Hosting on port " + port + "]");
+				JOptionPane.showMessageDialog(frame, "Success!\nHosting on port " + port);
+			});
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(frame, "Unable to start host server.");
 		}
