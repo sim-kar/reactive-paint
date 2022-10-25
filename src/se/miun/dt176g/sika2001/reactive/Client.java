@@ -50,14 +50,6 @@ public class Client {
         output.writeObject(object);
     }
 
-    public ObjectInputStream getInput() {
-        return this.input;
-    }
-
-    public ObjectOutputStream getOutput() {
-        return this.output;
-    }
-
     /**
      * Close the socket of this client.
      *
