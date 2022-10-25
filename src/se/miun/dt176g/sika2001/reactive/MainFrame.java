@@ -132,11 +132,7 @@ public class MainFrame extends JFrame {
 
 		Observable<Shape> clientShapes = getShapesFromClients(clients)
 				// handle error here since it will be stifled by retry otherwise
-				.doOnError(e -> JOptionPane.showMessageDialog(
-						this,
-						"Error communicating with client\n"
-								+ e.getMessage())
-				)
+				.doOnError(e -> displayError(e, "Error communicating with client:"))
 				.retry() // keep observable going if a client disconnects
 				.replay()
 				.autoConnect();
@@ -162,20 +158,12 @@ public class MainFrame extends JFrame {
 
 		Disposable sendShapes = sendShapesToHost(client, drawShapes).subscribe(
 				__ -> {},
-				e -> JOptionPane.showMessageDialog(
-						this,
-						"Error sending shape to host\n"
-								+ e.getMessage()
-				)
+				e -> displayError(e, "Error sending shape to host:")
 		);
 
 		Disposable receiveShapes = getShapesFromHost(client).subscribe(
 				this::addShapeToDrawing,
-				e -> JOptionPane.showMessageDialog(
-						this,
-						"Error receiving shape from host\n"
-								+ e.getMessage()
-				)
+				e -> displayError(e, "Error receiving shape from host:")
 		);
 
 		Disposable connectToHost = client.connect();
@@ -253,12 +241,7 @@ public class MainFrame extends JFrame {
 							// if we propagate the error when a client disconnects, the observable
 							// getting shapes from clients will restart, meaning all clients will be
 							// disconnected. We avoid that by handling the error here instead
-							JOptionPane.showMessageDialog(
-									this,
-									"Client disconnected\n"
-											+ e.getMessage()
-							);
-
+							displayError(e, "Client disconnected:");
 							client.shutdown();
 						} catch (Exception e) {
 							emitter.onError(e);
@@ -358,6 +341,19 @@ public class MainFrame extends JFrame {
 					}
 					emitter.onComplete();
 				}).subscribeOn(Schedulers.io())
+		);
+	}
+
+	/**
+	 * Display a message dialog with the given message, and the message from the given Throwable.
+	 *
+	 * @param e the Throwable
+	 * @param message the message to display
+	 */
+	private void displayError(Throwable e, String message) {
+		JOptionPane.showMessageDialog(
+				this,
+				message + "\n" + e.getMessage()
 		);
 	}
 
