@@ -42,6 +42,12 @@ public class Menu extends JMenuBar {
 		menu.add(menuItem);
 	}
 
+	/**
+	 * Instruct the given frame to start hosting. Will also add the port the frame is hosting on
+	 * to the frame's title.
+	 *
+	 * @param frame the frame to use as host
+	 */
 	private void host(MainFrame frame) {
 		try {
 			frame.host();
@@ -54,7 +60,14 @@ public class Menu extends JMenuBar {
 			JOptionPane.showMessageDialog(frame, "Unable to start host server.");
 		}
 	}
-	
+
+	/**
+	 * Instruct the given frame to connect to a host as a client. Will show an input dialog where
+	 * the user must enter the port of a host. A connection will only be established if the entered
+	 * port corresponds to an open socket; otherwise an error dialog will be shown.
+	 *
+	 * @param frame the client frame
+	 */
 	private void join(MainFrame frame) {
 		String input = JOptionPane.showInputDialog(frame, "Select a port to connect to.");
 
