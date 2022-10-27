@@ -196,15 +196,17 @@ public class MainFrame extends JFrame {
 	}
 
 	/**
-	 * Starts a new server, if one isn't started already. To avoid blocking the EDT, the server is
-	 * subscribed to the I/O scheduler.
-	 *
-	 * @throws IOException if an I/O exception occurs when the listening server's socket is opened
+	 * Starts a new server, if one isn't started already. To avoid blocking the EDT, the server's
+	 * observable is subscribed to the I/O scheduler. The observable is hot, and will autoconnect.
 	 */
-	private void startServer() throws IOException {
+	private void startServer() {
 		if (server == null) {
-			server = Observable.just(new Server())
-					.subscribeOn(Schedulers.io());
+			// use fromCallable so that server initialization doesn't block EDT
+			// multicast server, otherwise a new server will be emitted by the callable every time
+			server = Observable.fromCallable(Server::new)
+					.subscribeOn(Schedulers.io())
+					.publish()
+					.autoConnect(1);
 		}
 	}
 
