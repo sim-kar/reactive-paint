@@ -1,4 +1,4 @@
-package se.miun.dt176g.sika2001.reactive;
+package com.sim_kar.reactive_paint;
 
 /**
  * A tool for drawing, such as a rectangle-tool or a line-tool.

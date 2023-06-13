@@ -1,4 +1,4 @@
-package se.miun.dt176g.sika2001.reactive;
+package com.sim_kar.reactive_paint;
 
 import java.io.Serial;
 import java.io.Serializable;
