@@ -31,7 +31,7 @@ were utilized, including multicasting, combining observables, and scheduling.
 Requires Maven (tested with 3.6.3 as earliest version) and JDK14+. After cloning the project, 
 follow these steps to build and run it:
 
-1. Navigate to project directory
+1. Navigate to the project directory
 2. Build the project with maven, using the command: `mvn install`
 3. A jar file is created in the target directory. You can navigate to it from the project 
    directory with: `cd target`
@@ -40,10 +40,10 @@ follow these steps to build and run it:
 ## Usage
 ![Example screenshot](./img/reactive-paint-screenshot.png)
 
-* You can select which tool you want to draw with from the right-hand side: *freehand*, *line*, 
+* You can select which tool you want to draw with from the left-hand side: *freehand*, *line*, 
   *rectangle* or *oval*.
 * Use the cursor on the whiteboard to draw using the selected tool.
-* You can change the color and thickness from the right-hand side as well.
+* You can change the color and thickness from the left-hand side as well.
 * If the whiteboard is getting too cluttered, you can also press *clear* to remove everything on 
   your own whiteboard.
 
